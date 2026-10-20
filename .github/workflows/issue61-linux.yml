@@ -1,0 +1,64 @@
+name: Verify reviewed issue 61 patch on Linux
+
+'on':
+  push:
+    branches:
+      - validation/issue61-linux
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue61-linux-validation
+  cancel-in-progress: false
+
+jobs:
+  reviewed-patch:
+    name: Full quality checks on the reviewed patch
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Check out the reviewed source
+        id: source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ColourFour/spaceapp
+          ref: 582ae14a739cdc818794e35c74b27b93c43f4c68
+          persist-credentials: false
+
+      - name: Confirm the reviewed commit
+        run: |
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = 582ae14a739cdc818794e35c74b27b93c43f4c68
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Linux test tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ripgrep ffmpeg
+
+      - name: Install locked dependencies
+        id: dependencies
+        run: npm ci
+
+      - name: Full public test suite
+        id: public_tests
+        run: npm run test:public
+
+      - name: Full static checks
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npm run check
+
+      - name: Full build
+        id: build
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npm run build
+
+      - name: Launcher package dry run
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run pack:dry-run -w run-spaceapp
+
+      - name: Confirm tracked source remained unchanged
+        if: ${{ !cancelled() && steps.source.outcome == 'success' }}
+        run: git diff --exit-code HEAD
