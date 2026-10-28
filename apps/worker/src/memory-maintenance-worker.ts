@@ -10,6 +10,7 @@ import { DEFAULT_TEMPORAL_ADDRESS, DEFAULT_TEMPORAL_NAMESPACE } from "./constant
 import { otlpSpanExporterFromEnv } from "@space/runtime";
 import { createActivityObservabilityInterceptors } from "./activity-observability.js";
 import { workflowTracing } from "./workflow-tracing.js";
+import { reloadWhenServicesCommitChanges } from "./deployed-code-reload.js";
 
 const service = "space-memory-maintenance-worker";
 
@@ -42,7 +43,13 @@ if (!memoryMaintenanceEnabled(process.env)) {
       taskQueue: MEMORY_MAINTENANCE_TASK_QUEUE,
       activityConcurrency: memoryMaintenanceWorkerOptions.maxConcurrentActivityTaskExecutions
     }));
-    try { await worker.run(); } finally { await spans?.close(); }
+    const stopReloadWatch = reloadWhenServicesCommitChanges(worker, { log: (message) => console.log(JSON.stringify({ service, status: "reloading", message })) });
+    try {
+      await worker.run();
+    } finally {
+      stopReloadWatch();
+      await spans?.close();
+    }
   } catch (error) {
     console.error(JSON.stringify({
       service,
