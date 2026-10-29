@@ -23,13 +23,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ColourFour/spaceapp
-          ref: 582ae14a739cdc818794e35c74b27b93c43f4c68
+          ref: ad2e355be13ce3e37cd4b918d9859220a857b197
           persist-credentials: false
 
       - name: Confirm the reviewed commit
         run: |
           git rev-parse HEAD
-          test "$(git rev-parse HEAD)" = 582ae14a739cdc818794e35c74b27b93c43f4c68
+          test "$(git rev-parse HEAD)" = ad2e355be13ce3e37cd4b918d9859220a857b197
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -42,13 +42,23 @@ jobs:
         id: dependencies
         run: npm ci
 
-      - name: Full public test suite
-        id: public_tests
-        run: npm run test:public
-
       - name: Full static checks
+        id: static_checks
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
         run: npm run check
+
+      - name: Real Temporal tracing and replay integration cases
+        if: ${{ !cancelled() && steps.static_checks.outcome == 'success' }}
+        run: npm test -w @space/worker -- tests/workflow-tracing.integration.test.ts
+
+      - name: Full public test suite
+        id: public_tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npm run test:public
+
+      - name: Workspace tests if the root public suite fails
+        if: ${{ !cancelled() && steps.static_checks.outcome == 'success' && steps.public_tests.outcome == 'failure' }}
+        run: npm test --workspaces --if-present
 
       - name: Full build
         id: build
