@@ -339,9 +339,7 @@ No credential or transcript export was added.
   continuation from the run it continues (`roomAgentContinuation.sourceRunId`,
   indexed by migration 0206, at most 50 generations and the row limit) and
   marks it with `continuationOf`. Its events and logs remain under its own
-  trace ID. Optional OTLP export now links the independent W3C trace to its
-  causal span; this does not change the database/log trace-id convention.
-  Chat-pane sends from room actions use `<actionId>:chat`.
+  trace ID. Chat-pane sends from room actions use `<actionId>:chat`.
 - **CLI terminal task IDs are not linked.** `cliTaskId` and `revisionId` are not
   tied to request IDs.
 - **Hosts are observed from the API, not instrumented.** Since 2026-10-12 the
