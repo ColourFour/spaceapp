@@ -23,13 +23,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ColourFour/spaceapp
-          ref: ad2e355be13ce3e37cd4b918d9859220a857b197
+          ref: c96edb5831a1a42065981dd29640cd410b64d0f1
           persist-credentials: false
 
       - name: Confirm the reviewed commit
         run: |
           git rev-parse HEAD
-          test "$(git rev-parse HEAD)" = ad2e355be13ce3e37cd4b918d9859220a857b197
+          test "$(git rev-parse HEAD)" = c96edb5831a1a42065981dd29640cd410b64d0f1
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
